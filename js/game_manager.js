@@ -149,12 +149,11 @@ GameManager.prototype.move = function (direction) {
 	}
 	if (self.warning && (direction == 1 || direction == 2 || (direction == 3 && !this.unwantedMatchLeft()))){
 		self.warning = false;
-		bypass = true;
 	}
 	if (direction == 5 && self.warning){
 		self.warning = false;
 	}
-	else if (direction != 5 && !self.warning){
+	else if (direction != 5){
 		self.lastDirection = direction;
 		if (direction == 0 && !bypass){
 			self.warning = true;
@@ -162,7 +161,7 @@ GameManager.prototype.move = function (direction) {
 		else if (direction == 3 && this.unwantedMatchLeft() && !bypass){
 			self.warning = true;
 		}
-		else{
+		else if (!self.warning){
 			var cell, tile;
 
 			var vector     = this.getVector(direction);
