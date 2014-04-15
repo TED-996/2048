@@ -200,6 +200,9 @@ hr {
         display: inline-block; }
     .game-container .game-message.game-won, .game-container .game-message.game-over {
       display: block; }
+  .warning {
+	  background: #FC743A;
+  }
 
 .grid-container {
   position: absolute;
