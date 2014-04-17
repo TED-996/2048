@@ -58,6 +58,12 @@ LocalStorageManager.prototype.setDirections = function (fDir1, fDir2) {
 LocalStorageManager.prototype.getDirections = function() {
 	var fDir1 = this.storage.getItem(this.fDir1Key) || 0;
 	var fDir2 = this.storage.getItem(this.fDir2Key) || 3;
+	if (typeof fDir1 == "string"){
+		fDir1 = parseInt(fDir1);
+	}
+	if (typeof fDir2 == "string"){
+		fDir2 = parseInt(fDir2);
+	}
 	return { fDir1: fDir1, fDir2: fDir2 };
 }
 

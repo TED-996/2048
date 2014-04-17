@@ -4,6 +4,8 @@ function GameManager(size, InputManager, Actuator, StorageManager) {
 	this.storageManager = new StorageManager;
 	this.actuator       = new Actuator;
 
+	this.actuator.gameManager = this;
+
 	this.startTiles     = 2;
 
 	this.inputManager.on("move", this.move.bind(this));
@@ -13,6 +15,7 @@ function GameManager(size, InputManager, Actuator, StorageManager) {
 	var directions = this.storageManager.getDirections();
 	this.fDir1 = directions.fDir1;
 	this.fDir2 = directions.fDir2;
+	this.inOptions = false;
 
 	this.setup();
 }
@@ -105,7 +108,6 @@ GameManager.prototype.actuate = function () {
 		terminated: this.isGameTerminated(),
 		warning:    this.warning
 	});
-
 };
 
 // Represent the current game as an object
@@ -141,7 +143,7 @@ GameManager.prototype.move = function (direction) {
 	// 0: up, 1: right, 2: down, 3: left
 	var self = this;
 
-	if (this.isGameTerminated()) return; // Don't do anything if the game's over
+	if (this.isGameTerminated() || this.inOptions) return; // Don't do anything if the game's over
 
 	var bypass = false;
 
@@ -323,8 +325,7 @@ GameManager.prototype.unwantedMatchDir2 = function () {
 };
 
 GameManager.prototype.actuateWarning = function () {
-	var self = this;
-	self.actuator.setWarning(self.warning, self.lastDirection);
+	this.actuator.setWarning(this.warning);
 };
 
 GameManager.prototype.getPositions = function(){
@@ -352,4 +353,8 @@ GameManager.prototype.getPositions = function(){
 	}
 
 	return positions;
+};
+
+GameManager.prototype.saveDirections = function(){
+	this.storageManager.setDirections(this.fDir1, this.fDir2);
 };
