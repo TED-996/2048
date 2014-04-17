@@ -115,3 +115,11 @@ Grid.prototype.serialize = function () {
 		cells: cellState
 	};
 };
+
+Grid.prototype.getCells = function(positions) {
+	var result = [];
+	for (var i = 0; i < this.size; i++){
+		result.push(this.cells[positions[i].c][positions[i].l]);
+	}
+	return result;
+};

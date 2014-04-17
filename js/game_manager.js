@@ -4,11 +4,18 @@ function GameManager(size, InputManager, Actuator, StorageManager) {
 	this.storageManager = new StorageManager;
 	this.actuator       = new Actuator;
 
+	this.actuator.gameManager = this;
+
 	this.startTiles     = 2;
 
 	this.inputManager.on("move", this.move.bind(this));
 	this.inputManager.on("restart", this.restart.bind(this));
 	this.inputManager.on("keepPlaying", this.keepPlaying.bind(this));
+
+	var directions = this.storageManager.getDirections();
+	this.fDir1 = directions.fDir1;
+	this.fDir2 = directions.fDir2;
+	this.inOptions = false;
 
 	this.setup();
 }
@@ -53,7 +60,6 @@ GameManager.prototype.setup = function () {
 		this.over           = false;
 		this.won            = false;
 		this.keepPlaying    = false;
-
 		// Add the initial tiles
 		this.addStartTiles();
 	}
@@ -102,7 +108,6 @@ GameManager.prototype.actuate = function () {
 		terminated: this.isGameTerminated(),
 		warning:    this.warning
 	});
-
 };
 
 // Represent the current game as an object
@@ -138,30 +143,31 @@ GameManager.prototype.move = function (direction) {
 	// 0: up, 1: right, 2: down, 3: left
 	var self = this;
 
-	if (this.isGameTerminated()) return; // Don't do anything if the game's over
+	if (this.isGameTerminated() || this.inOptions) return; // Don't do anything if the game's over
 
 	var bypass = false;
 
-	if (direction == 4 && self.warning){
-		direction = self.lastDirection;
-		self.warning = false;
+	if (direction == 4 && this.warning){
+		direction = this.lastDirection;
+		this.warning = false;
 		bypass = true;
 	}
-	if (self.warning && (direction == 1 || direction == 2 || (direction == 3 && !this.unwantedMatchLeft()))){
-		self.warning = false;
+	if (this.warning && (direction == (this.fDir1 + 2) % 4 || direction == (this.fDir2 + 2) % 4 ||
+		(direction == this.fDir2 && !this.unwantedMatchDir2()))){
+		this.warning = false;
 	}
-	if (direction == 5 && self.warning){
-		self.warning = false;
+	if (direction == 5 && this.warning){
+		this.warning = false;
 	}
 	else if (direction != 5){
-		self.lastDirection = direction;
-		if (direction == 0 && !bypass){
-			self.warning = true;
+		this.lastDirection = direction;
+		if (direction == this.fDir1 && !bypass){
+			this.warning = true;
 		}
-		else if (direction == 3 && this.unwantedMatchLeft() && !bypass){
-			self.warning = true;
+		else if (direction == this.fDir2 && this.unwantedMatchDir2() && !bypass){
+			this.warning = true;
 		}
-		else if (!self.warning){
+		else if (!this.warning){
 			var cell, tile;
 
 			var vector     = this.getVector(direction);
@@ -301,15 +307,15 @@ GameManager.prototype.positionsEqual = function (first, second) {
 	return first.x === second.x && first.y === second.y;
 };
 
-GameManager.prototype.unwantedMatchLeft = function () {
-	var self = this;
-	var cells = self.grid.cells;
-	var lastValue = cells[0][this.size - 1] ? cells[0][this.size - 1].value : 0;
+GameManager.prototype.unwantedMatchDir2 = function () {
+	var positions = this.getPositions();
+	var cells = this.grid.getCells(positions);
+	var lastValue = cells[0] ? cells[0].value : 0;
 	if (lastValue == 0){
 		return true;
 	}
 	for (var i = 1; i < this.size; i++){
-		var value = cells[i][this.size - 1] ? cells[i][this.size - 1].value : 0;
+		var value = cells[i] ? cells[i].value : 0;
 		if (lastValue == value || value == 0){
 			return true;
 		}
@@ -319,6 +325,36 @@ GameManager.prototype.unwantedMatchLeft = function () {
 };
 
 GameManager.prototype.actuateWarning = function () {
-	var self = this;
-	self.actuator.setWarning(self.warning, self.lastDirection);
-}
+	this.actuator.setWarning(this.warning);
+};
+
+GameManager.prototype.getPositions = function(){
+	var positions = [];
+
+	var vdL = [-1, 0, 1, 0];
+	var vdC = [0, 1, 0, -1];
+
+	//get the corner.
+	//find the "do" directions
+	var dDir1 = (this.fDir1 + 2) % 4;
+	var dDir2 = (this.fDir2 + 2) % 4;
+	//sort them
+	var sDDir1 = Math.min(dDir1, dDir2);
+	var sDDir2 = Math.max(dDir1, dDir2);
+	//get the corners
+	var lCorner = sDDir1 == 0 ? 0 : 3;
+	var cCorner = sDDir2 == 3 ? 0 : 3;
+
+	positions.push( {l: lCorner, c: cCorner} );
+	for (var i = 1; i < this.grid.size; i++){
+		lCorner += vdL[this.fDir2];
+		cCorner += vdC[this.fDir2];
+		positions.push( {l: lCorner, c: cCorner} );
+	}
+
+	return positions;
+};
+
+GameManager.prototype.saveDirections = function(){
+	this.storageManager.setDirections(this.fDir1, this.fDir2);
+};
