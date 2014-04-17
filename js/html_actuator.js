@@ -33,8 +33,6 @@ HTMLActuator.prototype.actuate = function (grid, metadata) {
 			}
 		}
 
-        self.setWarning(metadata.warning, metadata.lastDirection);
-
 	});
 };
 
